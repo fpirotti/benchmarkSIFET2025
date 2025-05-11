@@ -20,7 +20,8 @@ come colore, texture, forma o contesto spaziale.
 
 Descrittori geometrici da intorno di 50 cm e 1 m estratti con 32 threads -
 
-![](images/clipboard-2581011368.png){width="373"}
+ 
+<img src="images/clipboard-2581011368.png" width="373">
 
 I descrittori sono stati scalati e trasformati rispetto alla loro mediana ed alla loro deviazione standard in quanto spesso non seguono una distribuzione nornale .
 The standard mathematical **symbol for the median** is:
@@ -28,11 +29,12 @@ The standard mathematical **symbol for the median** is:
 
 $$
 z = \frac{x - \tilde{x}}{\text{MAD}(x)}
-
-\quad \text{where} \quad \tilde{x} = \text{median}(x)
 $$
 
- 
+
+$$  
+\quad \text{where} \quad \tilde{x} = \text{median}(x)
+$$
 
 ## Risultati
 
