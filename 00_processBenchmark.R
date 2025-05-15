@@ -1,25 +1,49 @@
 pacman::p_load("lidR", "data.table", "h2o", "parallel", "pbmcapply")
-
 # library(CloudGeometry)
 library(lasR)
 ## calcolo feature geometriche ----
-
-dGeom <- function(chunk, rgbmap) # user defined function
+dGeom <- function(chunk) # user defined function
 {
   las <- readLAS(chunk)                  # read the chunk
   if (is.empty(las)) return(NULL)        # check if it actually contain points
-
-  lasG <- CloudGeometry::calcGF(las@data[,1:3],rk = 1, threads = 32)  # apply computation of interest
+  browser()
+  # lasG <- CloudGeometry::calcGF(las@data[,1:3],rk = 1, threads = 32)  # apply computation of interest
+  # for(i in names(lasG)){
+  #   las <- lidR::add_lasattribute_manual(las, lasG[,i], name=i, desc=i, type="float")
+  # }
+  lasG <- CloudGeometry::calcGF(las@data[,1:3],rk = 0.5, threads = 32)  # apply computation of interest
   for(i in names(lasG)){
     las <- lidR::add_lasattribute_manual(las, lasG[,i], name=i, desc=i, type="float")
   }
-  lasG <- CloudGeometry::calcGF(las@data[,1:3],rk = 0.5, threads = 32)  # apply computation of interest
+  lasG <- CloudGeometry::calcGF(las@data[,1:3],rk = 0.25, threads = 32)  # apply computation of interest
   for(i in names(lasG)){
     las <- lidR::add_lasattribute_manual(las, lasG[,i], name=i, desc=i, type="float")
   }
   return(las) # output
 }
 
+
+ff <- list.files("data/", pattern="\\.las$", full.names = T)
+load <-  function(data) {
+  if(nrow(data)<1){
+    return(data)
+  }
+  lasG <- CloudGeometry::calcGF(data,rk = 0.5, threads = 54)  # apply computation of interest
+
+  lasG2 <- CloudGeometry::calcGF(data,rk = 0.25, threads = 54)  # apply computation of interest
+
+  return(cbind(lasG, lasG2))
+}
+
+read <- reader()
+calle <-  callback(load, expose = "xyz", no_las_update = TRUE)
+
+ee <- tryCatch({
+  exec(read + calle, on = ff[[70]] )
+}, error = function(e) {
+  list(file = basename(chunk$f), error = e$message)  # ritorna errore e file
+})
+View(ee[1:20,])
 # file <- "data/cloud_merged2.laz"
 # ctg <- readLAScatalog(file)
 # opt_chunk_size(ctg) <- 100
@@ -61,7 +85,7 @@ getExtraMatrix <- function(chunk)
   return ( dt_sampled )
 }
 
-## estratto valori delle feature ----
+## estraggo valori delle feature ----
 ff <- list.files("data/", pattern="\\.las$", full.names = T)
 ctg2 <- readLAScatalog( ff )
 opt_chunk_size(ctg2) <- 0
@@ -70,6 +94,7 @@ opt_chunk_buffer(ctg2) <- -3
 vv <- apply(ctg2@data , 1, function(x){ list(f=x[["filename"]], p=x[["geometry"]]) })
 
 output2 <-  pbmclapply(vv, getExtraMatrix, mc.cores = 12)
+
 parallel::mcparallel(NULL)  # should return NULL
 gc()                        # force garbage collection
 
@@ -106,15 +131,16 @@ gc()
 ss <- sample(1:nrow(all2),size=3e6, replace = F)
 all3 <- all2[ss,]
 
+
 ## h2o model kmeans ----------
-h2o.init()
+h2o.init(ice_root="/archivio02/tmp")
 # df <- h2o::as.h2o(all3)
 # h2o::h2o.save_frame(df, "threeMpoints.frame")
 
 df <- h2o.load_frame(basename("frames/threeMpoints.frame/all3_sid_a652_5"), dir = "frames/threeMpoints.frame")
 remCols <- -1*(grep("pointDensity", colnames(df)))
 # colnames( df[,remCols] )
-segModel3m <- h2o::h2o.kmeans(df[,remCols], k=24, nfolds=0)
+# segModel3m <- h2o::h2o.kmeans(df[,remCols], k=24, nfolds=0)
 # h2o::h2o.saveModel(segModel3m, "models/3Mpts_kmeans10k")
 
 segModel3m <- h2o::h2o.loadModel("models/3Mpts_kmeans10k/KMeans_model_R_1747151150972_8")
@@ -127,26 +153,33 @@ for(chunk in vv){
   area <- sf::st_buffer(chunk$p, -3 )
   bb <- sf::st_bbox(area)
 
+  h2o.removeAll(retained_elements = segModel3m@model_id)
+
   load <-  function(data) {
     if(ncol(data)<20 || nrow(data)<1){
       return(data)
     }
+    message("sweep start")
     all2 <- sweep( sweep(data[,-31], 2, stats$q50, "-"), 2, stats$mad, "/")
-    # remCols <- (grep("pointDensity", colnames(all2)))
-
-    # all2[,remCols] <- NULL
+    message("sweep finished")
+    remCols <- (grep("pointDensity", colnames(all2)))
+    all2[,remCols] <- NULL
+    message("col removed")
+    message("conv to h2o start")
     dd <- as.h2o(all2)
+    message("conv to h2o end")
+    message("predict start")
     clusters <- as.data.frame(h2o.predict(segModel3m, dd))
+    message("predict end")
     data$segment <- clusters$predict
     return(data)
-    }
+  }
   # read <- reader()
   # # read <- reader( )
   read <- reader_rectangles(xmin = bb[["xmin"]],
                             xmax = bb[["xmax"]],
                             ymin = bb[["ymin"]],
-                            ymax = bb[["ymax"]]
-  )
+                            ymax = bb[["ymax"]] )
   calle <-
     add_extrabytes("char", "segment", "k-means cluster") +
     callback(load, expose = "E", no_las_update = FALSE)
@@ -162,5 +195,12 @@ for(chunk in vv){
   # }
 
     message(ee)
-
+    message("================")
 }
+
+h2o.shutdown(F)
+#### merge dei tiles -----
+ff <- list.files("data/outputcluster/", pattern="\\.laz$", full.names = T)
+# ctg2 <- readLAScatalog( ff )
+# opt_chunk_size(ctg2) <- 0
+# opt_chunk_buffer(ctg2) <- -3
