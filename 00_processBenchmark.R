@@ -1,6 +1,36 @@
 pacman::p_load("lidR", "data.table", "h2o", "parallel", "pbmcapply")
 # library(CloudGeometry)
 library(lasR)
+## THIN ----
+outf <- "data/out/lowerPoints1m.laz"
+if(!file.exists(outf)){
+  low <- filter_with_grid(0.5, operator = "min")
+  ff <- list.files("data/", pattern="\\.las$", full.names = T)
+  ctg2 <- readLAScatalog( ff )
+  opt_chunk_size(ctg2) <- 0
+  opt_chunk_buffer(ctg2) <- -1
+  pipeline = reader() + low +  write_las(ofile = outf)
+  outf = exec(pipeline, on = ctg2, ncores = nested(4, 2) )
+}
+
+## GROUND ----  ps have to find better ground classifier
+outf2 <- "data/out/lowerPoints1mClassified.laz"
+pipeline = sprintf("lasground64 -i %s -o %s", outf, outf2)
+ret = system(pipeline)
+
+## GRID GROUND ----
+outf3 <- "data/out/lowerPoints1mClassified.tif"
+read <- reader()
+tri  <- triangulate(filter = keep_ground())
+dtm  <- rasterize(1, tri)
+pipeline <- read + tri + dtm + avgi + chm
+ans <- exec(pipeline, on = f)
+
+
+## NORMALIZE ----
+
+trans <- transform_with(mesh)
+
 ## calcolo feature geometriche ----
 dGeom <- function(chunk) # user defined function
 {

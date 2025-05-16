@@ -10,13 +10,47 @@ Francesco Pirotti, Enrico Magazzino
 
 Suddividere i punti rilevati con sensore laser scanner L2 in parti omogenee (segmenti o oggetti), in base a criteri estratti dalle variabili dispoinibili.
 
-## Materiale
+## Materiale e Metodi
 
-Il benchmark mette a disposizione diversi prodotti da rilievo con drone con camere RGB, multispettrali e LiDAR su una zona agricola
+Il benchmark mette a disposizione diversi prodotti da rilievo con drone con camere RGB, multispettrali e LiDAR su una zona agricola. La procedura di segmentazione assistita viene implementata usando tre combinazioni:
+
+1.  solo nuvola di punti e solo descrittori geometrici
+
+2.  solo nuvola di punti e descrittori geometici + RGB + intensità
+
+3.  nuvola di punti e descrittori geometici + RGB + intensità +
+
+Per la procedura di segmentazione vengono utilizzati quasi tutti algoritmi e applicativi a codice aperto (open source - OS) di ultima generazione, "chiamati" in una procedura in ambiente R per uniformare il processo. In particolare vengono usati Lastools, lasR, LidR, CloudGeometry e H2O.
+
+Per l'elaborazione viene usato un calcolatore assemblato SuperMicro, con le seguenti caratteristiche:
+
+::: list
+-   CPU(s): 384
+
+-   Model name: AMD EPYC 9654 96-Core Processor
+
+-   CPU family: 25
+
+-   Model: 17
+
+-   Thread(s) per core: 2
+
+-   Core(s) per socket: 96
+
+-   CPU max MHz: 3707.8120
+
+-   CPU min MHz: 1500.0000
+
+-   BogoMIPS: 4800.10
+
+-   Memory: total: 770 GiB
+:::
 
 ## Metodi
 
-Descrittori geometrici da intorno di 50 cm e 1 m estratti con 32 CPU. I descrittori geometrici sono noti da letteratura e sono qui estratti con la libreria [R "CloudGeometry"](https://github.com/fpirotti/CloudGeometry) disponibile su Github. Questa libreria sfrutta la capacità di utilizzo del calcolo parallelo multi-CPU dei moderni calcolatori. Questo passaggio è fondamentale dato il numero elevato di punti (\> 1e9 ).
+L'obiettivo è la segmentazione, dunque
+
+Descrittori geometrici da intorno di 50 cm e 0.25 m estratti con 32 CPU. I descrittori geometrici sono noti da letteratura e sono qui estratti con la libreria [R "CloudGeometry"](https://github.com/fpirotti/CloudGeometry) disponibile su Github. Questa libreria sfrutta la capacità di utilizzo del calcolo parallelo multi-CPU dei moderni calcolatori. Questo passaggio è fondamentale dato il numero elevato di punti (\> 1e9 ).
 
 ![](images/clipboard-1084557557.png){width="302"}
 
@@ -41,3 +75,5 @@ I dati sono visibili online [QUI](https://www.cirgeo.unipd.it/pointclouds/sifetB
 La nuvola dopo segmentazione è disponibile per download QUI.
 
 ## Discussione
+
+Nel processo solo Lastools non è totalmente OS. Può essere sostituito eventualmente con soluzioni alternative; in questa proposta viene usato per l'efficacia dell'implementazione della fase di identificazione dei punti terreno con il modulo LasGround.
