@@ -1,11 +1,11 @@
 pacman::p_load("lidR", "data.table", "h2o", "parallel", "pbmcapply")
 # library(CloudGeometry)
 library(lasR)
-## THIN ----
+## 1. THIN ----
 outf <- "data/out/lowerPoints1m.laz"
+ff <- list.files("data/in", pattern="\\.las$", full.names = T)
 if(!file.exists(outf)){
   low <- filter_with_grid(0.5, operator = "min")
-  ff <- list.files("data/", pattern="\\.las$", full.names = T)
   ctg2 <- readLAScatalog( ff )
   opt_chunk_size(ctg2) <- 0
   opt_chunk_buffer(ctg2) <- -1
@@ -13,127 +13,35 @@ if(!file.exists(outf)){
   outf = exec(pipeline, on = ctg2, ncores = nested(4, 2) )
 }
 
-## GROUND ----  ps have to find better ground classifier
+## 2. GROUND ----
+### ps have to find better ground classifier
 outf2 <- "data/out/lowerPoints1mClassified.laz"
 pipeline = sprintf("lasground64 -i %s -o %s", outf, outf2)
 ret = system(pipeline)
 
-## GRID GROUND ----
+## 3. GRID GROUND ----
 outf3 <- "data/out/lowerPoints1mClassified.tif"
 read <- reader()
 tri  <- triangulate(filter = keep_ground())
-dtm  <- rasterize(1, tri)
-pipeline <- read + tri + dtm + avgi + chm
-ans <- exec(pipeline, on = f)
+dtm  <- rasterize(0.5, tri)
+pipeline <- read + tri + dtm
+ans <- exec(pipeline, on = outf2)
+terra::writeRaster(ans[[1]], outf3, overwrite=T)
+
+## 4. NORMALIZE ----
+outf4 <- "data/out/lowerPoints1mClassifiedNorm.laz"
+rast <- load_raster(outf3, band = 1L)
+tr = transform_with(rast)
+pipeline <- rast + tr + write_las(ofile = outf4)
+ans <- exec(pipeline, on = outf2)
 
 
-## NORMALIZE ----
-
-trans <- transform_with(mesh)
-
-## calcolo feature geometriche ----
-dGeom <- function(chunk) # user defined function
-{
-  las <- readLAS(chunk)                  # read the chunk
-  if (is.empty(las)) return(NULL)        # check if it actually contain points
-  browser()
-  # lasG <- CloudGeometry::calcGF(las@data[,1:3],rk = 1, threads = 32)  # apply computation of interest
-  # for(i in names(lasG)){
-  #   las <- lidR::add_lasattribute_manual(las, lasG[,i], name=i, desc=i, type="float")
-  # }
-  lasG <- CloudGeometry::calcGF(las@data[,1:3],rk = 0.5, threads = 32)  # apply computation of interest
-  for(i in names(lasG)){
-    las <- lidR::add_lasattribute_manual(las, lasG[,i], name=i, desc=i, type="float")
-  }
-  lasG <- CloudGeometry::calcGF(las@data[,1:3],rk = 0.25, threads = 32)  # apply computation of interest
-  for(i in names(lasG)){
-    las <- lidR::add_lasattribute_manual(las, lasG[,i], name=i, desc=i, type="float")
-  }
-  return(las) # output
-}
+## 5. calcolo feature geometriche ----
+outf5 <- "data/out/lowerPoints1mClassifiedNormGeom.laz"
+pipeline <- geometry_features(20, 0.5, features = "apslocei") + write_las(ofile = outf5)
+ans <- exec(pipeline, on =outf4)
 
 
-ff <- list.files("data/", pattern="\\.las$", full.names = T)
-load <-  function(data) {
-  if(nrow(data)<1){
-    return(data)
-  }
-  lasG <- CloudGeometry::calcGF(data,rk = 0.5, threads = 54)  # apply computation of interest
-
-  lasG2 <- CloudGeometry::calcGF(data,rk = 0.25, threads = 54)  # apply computation of interest
-
-  return(cbind(lasG, lasG2))
-}
-
-read <- reader()
-calle <-  callback(load, expose = "xyz", no_las_update = TRUE)
-
-ee <- tryCatch({
-  exec(read + calle, on = ff[[70]] )
-}, error = function(e) {
-  list(file = basename(chunk$f), error = e$message)  # ritorna errore e file
-})
-View(ee[1:20,])
-# file <- "data/cloud_merged2.laz"
-# ctg <- readLAScatalog(file)
-# opt_chunk_size(ctg) <- 100
-# opt_chunk_buffer(ctg) <- 3
-# opt_output_files(ctg) <- paste0("data/{ID}_geom")
-# output <- catalog_apply(ctg, dGeom )
-
-getExtraMatrix <- function(chunk)
-{
-  # las <- readLAS(chunk$f)
-  # if (is.empty(las))  return(NULL)
-
-  area <- sf::st_buffer(chunk$p, -3 )
-  bb <- sf::st_bbox(area)
-  load <-  function(data) { return(data) }
-  read <- reader_rectangles(xmin = bb[["xmin"]],
-                            xmax = bb[["xmax"]],
-                            ymin = bb[["ymin"]],
-                            ymax = bb[["ymax"]]
-                            )
-  # read <- reader( )
-  calle <- callback(load, expose = "E", no_las_update = TRUE)
-
-  ee <- tryCatch({
-    exec(read + calle, on = chunk$f )
-  }, error = function(e) {
-    list(file = basename(chunk$f), error = e$message)  # ritorna errore e file
-  })
-
-  if(!is.data.frame(ee) || ncol(ee)==0 || nrow(ee)==0) return(list(file = basename(chunk$f), error = "No rows or cols"))
-
-  dt <- as.data.table(ee)
-  max_rows <- 1e6
-  dt_sampled <- if (nrow(dt) > max_rows) {
-    dt[sample(.N, max_rows)]
-  } else {
-    dt
-  }
-  return ( dt_sampled )
-}
-
-## estraggo valori delle feature ----
-ff <- list.files("data/", pattern="\\.las$", full.names = T)
-ctg2 <- readLAScatalog( ff )
-opt_chunk_size(ctg2) <- 0
-opt_chunk_buffer(ctg2) <- -3
-
-vv <- apply(ctg2@data , 1, function(x){ list(f=x[["filename"]], p=x[["geometry"]]) })
-
-output2 <-  pbmclapply(vv, getExtraMatrix, mc.cores = 12)
-
-parallel::mcparallel(NULL)  # should return NULL
-gc()                        # force garbage collection
-
-
-output3 <- output2[sapply(output2, function(x){ class(x[[1]])=="numeric" } )]
-all <- data.table::rbindlist(output3)
-rm(output2)
-rm(output3)
-gc()
 
 
 ## MAD e statistiche per normalizzare ----
