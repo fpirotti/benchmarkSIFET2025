@@ -1,10 +1,12 @@
 pacman::p_load("lidR", "data.table", "h2o", "parallel", "pbmcapply")
 # library(CloudGeometry)
 library(lasR)
+force=F
+
 ## 1. THIN ----
 outf <- "data/out/lowerPoints1m.laz"
 ff <- list.files("data/in", pattern="\\.las$", full.names = T)
-if(!file.exists(outf)){
+if(!file.exists(outf) || force==T){
   low <- filter_with_grid(0.5, operator = "min")
   ctg2 <- readLAScatalog( ff )
   opt_chunk_size(ctg2) <- 0
@@ -14,21 +16,27 @@ if(!file.exists(outf)){
 }
 
 ## 2. GROUND ----
-### ps have to find better ground classifier
+### ps have to find OS ground classifier
 outf2 <- "data/out/lowerPoints1mClassified.laz"
-pipeline = sprintf("lasground64 -i %s -o %s", outf, outf2)
-ret = system(pipeline)
+if(!file.exists(outf2) || force==T){
+  pipeline = sprintf("lasground64 -i %s -o %s", outf, outf2)
+  ret = system(pipeline)
+}
+
 
 ## 3. GRID GROUND ----
 outf3 <- "data/out/lowerPoints1mClassified.tif"
-read <- reader()
-tri  <- triangulate(filter = keep_ground())
-dtm  <- rasterize(0.5, tri)
-pipeline <- read + tri + dtm
-ans <- exec(pipeline, on = outf2)
-terra::writeRaster(ans[[1]], outf3, overwrite=T)
+if(!file.exists(outf3) || force==T){
+  read <- reader()
+  tri  <- triangulate(filter = keep_ground())
+  dtm  <- rasterize(0.5, tri)
+  pipeline <- read + tri + dtm
+  ans <- exec(pipeline, on = outf2)
+  terra::writeRaster(ans[[1]], outf3, overwrite=T)
+}
 
 ## 4. NORMALIZE ----
+outf4 <- "data/out/Norm*.laz"
 outf4 <- "data/out/lowerPoints1mClassifiedNorm.laz"
 rast <- load_raster(outf3, band = 1L)
 tr = transform_with(rast)
