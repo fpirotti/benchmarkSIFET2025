@@ -36,12 +36,13 @@ if(!file.exists(outf3) || force==T){
 }
 
 ## 4. NORMALIZE ----
-outf4 <- "data/out/Norm*.laz"
+outf4 <- "data/out/*.laz"
 outf4 <- "data/out/lowerPoints1mClassifiedNorm.laz"
+read <- reader()
 rast <- load_raster(outf3, band = 1L)
-tr = transform_with(rast)
-pipeline <- rast + tr + write_las(ofile = outf4)
-ans <- exec(pipeline, on = outf2)
+norm <- rast + transform_with(rast)
+pipeline <- read + norm + write_las(ofile = outf4)
+ans <- exec(pipeline, on = ff[1:3])
 
 
 ## 5. calcolo feature geometriche ----
