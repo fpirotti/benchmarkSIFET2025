@@ -5,6 +5,7 @@ library(lasR)
 #global variables
 tilesize <- 50
 buffsize <- 1
+force  <-  F
 ## LEGGO IL FILE ----
 file <- "data/in/cloud_merged.las"
 ## 0.1 INDEX ----
@@ -36,8 +37,6 @@ if(length(tiles)==0 || force==T){
 }
 
 
-force=F
-
 ## 1. THIN ----
 outf1 <- "data/out/lowerPoints_thin.laz"
 if(!file.exists(outf1) || force==T){
@@ -49,7 +48,7 @@ if(!file.exists(outf1) || force==T){
 ### ps have to find OS ground classifier
 outf2a <- "data/out/lowerPoints1mClassified_ground.laz"
 outf2b <- "data/out/lowerPoints1mOnly_ground.laz"
-if(!file.exists(outf2) || force==T){
+if(!file.exists(outf2a) || !file.exists(outf2b) || force==T){
   pipeline = sprintf("lasground_new64 -compute_height -metro -odix _ground -olaz  -i %s -o %s", outf1, outf2a)
   ret = system(pipeline)
   pipeline = sprintf("las2las64 -keep_class 2 -i %s -o %s", outf2a, outf2b)
@@ -65,23 +64,46 @@ if(!file.exists(outf3) || force==T){
 }
 
 ## 4. NORMALIZE ----
-tiles.norm <- list.files("data/out/tilesNorm",  pattern="\\.la[sz]$")
+tiles.norm <-  list.files("data/out/tiles", pattern="*._1\\.las$", full.names = T)
 if(length(tiles.norm)==0 || force==T){
   pipeline = sprintf('lasheight64 -store_as_extra_bytes -ground_points %s -i data/out/tiles/*.laz  -cores 64 ',
                      outf2b)
   ret = system(pipeline)
-  fl <- list.files("data/out/tiles", pattern="*._1\\.las$", full.names = T)
-
+  tiles.norm <- list.files("data/out/tiles", pattern="*._1\\.las$", full.names = T)
 }
 
 
 ## 5. calcolo feature geometriche ----
-outf5 <- "data/out/lowerPoints1mClassifiedNormGeom.laz"
-CloudGeometry::calcGF(outf5, 5)
-get_parallel_strategy()
-pipeline <- geometry_features(r = 4, features = "apslocei") + write_las(ofile = outf5)
-ans <- exec(pipeline, on =outf4)
+outf5 <- "data/out/geom/*.laz"
+load <-  function(data) {
+  if(nrow(data)<1){
+    return(data)
+  }
+  lasG1 <- CloudGeometry::calcGF(data[,1:3],rk = 0.5, threads = 60)  # apply computation of interest
+  lasG2 <- CloudGeometry::calcGF(data[,1:3],rk = 0.25, threads = 60)  # apply computation of interest
+  # lasG <- cbind(lasG1, lasG2)
+  return(cbind(lasG1, lasG2))
+}
+read <- reader()
+calle <-  callback(load, expose = "xyE", no_las_update = TRUE)
 
+## dummy first run to get column names
+cc<-    exec(read + calle, on = tiles.norm[[1]]  )
+
+read <- reader()
+for(i in names(cc)){
+  read <- read + add_extrabytes(data_type = "float", i,i)
+}
+calle <-  callback(load, expose = "xyE", no_las_update = FALSE)
+
+ee <- {}
+for(f in tiles.norm){
+  ee[[basename(f)]] <- tryCatch({
+    exec(read + calle + write_las(outf5), on = f  )
+  }, error = function(e) {
+    list(file=f, error=e$message)
+  })
+}
 
 
 
@@ -99,10 +121,11 @@ getStats <- function(v){
 }
 
 ## apply loop for stats ------
-output4 <-  pbmclapply(all, getStats, mc.cores = 10)
-saveRDS(output4, "output4.rds")
+# output4 <-  pbmclapply(all, getStats, mc.cores = 10)
+# saveRDS(output4, "output4.rds")
 output4 <- readRDS("output4.rds")
 stats <- data.table::rbindlist(output4)
+stats2 <- data.table::rbindlist(output4, idcol = "metric")
 all2 <- sweep( sweep(all, 2, stats$q50, "-"), 2, stats$mad, "/")
 rm(all)
 gc()
