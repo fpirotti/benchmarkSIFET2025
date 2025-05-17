@@ -12,15 +12,25 @@ Suddividere i punti rilevati con sensore laser scanner L2 in parti omogenee (seg
 
 ## Materiale e Metodi
 
-Il benchmark mette a disposizione diversi prodotti da rilievo con drone con camere RGB, multispettrali e LiDAR su una zona agricola. La procedura di segmentazione assistita viene implementata usando tre combinazioni:
+### Dati utilizzati
+
+Il benchmark mette a disposizione diversi prodotti da rilievo con drone con camere RGB, multispettrali e LiDAR su una zona agricola. La nuvola di punti contiene 1'248'152'076 (1.25 x 10\^9) punti.
+
+La procedura di segmentazione assistita viene implementata usando tre combinazioni:
 
 1.  solo nuvola di punti e solo descrittori geometrici
 
 2.  solo nuvola di punti e descrittori geometici + RGB + intensità
 
-3.  nuvola di punti e descrittori geometici + RGB + intensità +
+3.  nuvola di punti e descrittori geometici + RGB + intensità + NIR
+
+### Software
 
 Per la procedura di segmentazione vengono utilizzati quasi tutti algoritmi e applicativi a codice aperto (open source - OS) di ultima generazione, "chiamati" in una procedura in ambiente R per uniformare il processo. In particolare vengono usati Lastools, lasR, LidR, CloudGeometry e H2O.
+
+Per la procedura di creazione dell'ortoimmagine multispettrale è stato utilizzato Metashape-pro.
+
+### Capacità di calcolo
 
 Per l'elaborazione viene usato un calcolatore assemblato SuperMicro, con le seguenti caratteristiche:
 
@@ -46,9 +56,35 @@ Per l'elaborazione viene usato un calcolatore assemblato SuperMicro, con le segu
 -   Memory: total: 770 GiB
 :::
 
+### Area di studio
+
+<img src="images/Layout 1.jpeg" width="600"/>
+
 ## Metodi
 
-L'obiettivo è la segmentazione, dunque
+L'obiettivo è la segmentazione, realizzata in modalità semi-automatica, mediante la suddivisione dei punti in cluster sulla base delle loro caratteristiche distintive.
+
+L'unità elementare usata per la segmentazione è il singolo punto nella nuvola di punti
+
+Ortorettifica e
+
+I dati multispettrali del DJI Mavic 3M (multispettrale e RGB) sono stati
+
+Organizzare tutte le immagini di banda (RGB, Verde, Rosso, Bordo Rosso, NIR) in una cartella.
+
+Aggiungere foto in Metashape utilizzando "Raggruppa per: Tipo di fotocamera" per rilevare automaticamente i set multispettrali.
+
+Controllare la calibrazione della fotocamera per verificare le bande e assegnare le lunghezze d'onda, se necessario.
+
+Allineare le foto (precisione media/alta).
+
+Creare DEM e ortomosaico multispettrale.
+
+Utilizzare il Raster Calculator per calcolare gli indici di vegetazione come NDVI.
+
+(Opzionale) Applicare la calibrazione della riflettanza utilizzando i metadati del sensore di luminosità o il pannello di calibrazione.
+
+Tradotto con DeepL.com (versione gratuita)
 
 Descrittori geometrici da intorno di 50 cm e 0.25 m estratti con 32 CPU. I descrittori geometrici sono noti da letteratura e sono qui estratti con la libreria [R "CloudGeometry"](https://github.com/fpirotti/CloudGeometry) disponibile su Github. Questa libreria sfrutta la capacità di utilizzo del calcolo parallelo multi-CPU dei moderni calcolatori. Questo passaggio è fondamentale dato il numero elevato di punti (\> 1e9 ).
 
