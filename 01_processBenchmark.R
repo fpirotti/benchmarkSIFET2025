@@ -22,7 +22,7 @@ opt_output_files<-""
 plot(ctg, chunk=TRUE)
 tiles <- list.files("data/out/tiles",  pattern="\\.la[sz]$")
 if(length(tiles)==0 || force==T){
-  pipeline = sprintf('lastile64 -i %s -tile_size %f -buffer 1  -o "data/out/tiles/tile.laz"  -cores 32 ',
+  pipeline = sprintf('lastile64 -i %s -tile_size %f -buffer %f  -o "data/out/tiles/tile.laz"  -cores 64 ',
                      file, tilesize, buffsize)
   ret = system(pipeline)
   tiles <- list.files("data/out/tiles",  pattern="\\.la[sz]$")
@@ -39,7 +39,7 @@ if(length(tiles)==0 || force==T){
 force=F
 
 ## 1. THIN ----
-outf1 <- "data/out/lowerPoints1m.laz"
+outf1 <- "data/out/lowerPoints_thin.laz"
 if(!file.exists(outf1) || force==T){
   pipeline = sprintf("lasthin64 -i %s -o %s  -step 0.5 -cores 32", file, outf1)
   ret = system(pipeline, intern=T)
@@ -67,10 +67,11 @@ if(!file.exists(outf3) || force==T){
 ## 4. NORMALIZE ----
 tiles.norm <- list.files("data/out/tilesNorm",  pattern="\\.la[sz]$")
 if(length(tiles.norm)==0 || force==T){
-  pipeline = sprintf('lasheight64 -ground_points %s -i data/out/tiles/tile*.laz -cores 32 ',
+  pipeline = sprintf('lasheight64 -store_as_extra_bytes -ground_points %s -i data/out/tiles/*.laz  -cores 64 ',
                      outf2b)
   ret = system(pipeline)
-  tiles.norm <- list.files("data/out/tilesNorm",  pattern="\\.la[sz]$")
+  fl <- list.files("data/out/tiles", pattern="*._1\\.las$", full.names = T)
+
 }
 
 
