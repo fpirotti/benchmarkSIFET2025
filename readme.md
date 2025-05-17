@@ -22,8 +22,6 @@ La procedura di segmentazione assistita viene implementata usando tre combinazio
 
 2.  solo nuvola di punti e descrittori geometici + RGB + intensità
 
-3.  nuvola di punti e descrittori geometici + RGB + intensità + NIR
-
 ### Software
 
 Per la procedura di segmentazione vengono utilizzati quasi tutti algoritmi e applicativi a codice aperto (open source - OS) di ultima generazione, "chiamati" in una procedura in ambiente R per uniformare il processo. In particolare vengono usati Lastools, lasR, LidR, CloudGeometry e H2O.
@@ -66,26 +64,6 @@ L'obiettivo è la segmentazione, realizzata in modalità semi-automatica, median
 
 L'unità elementare usata per la segmentazione è il singolo punto nella nuvola di punti
 
-Ortorettifica e
-
-I dati multispettrali del DJI Mavic 3M (multispettrale e RGB) sono stati
-
-Organizzare tutte le immagini di banda (RGB, Verde, Rosso, Bordo Rosso, NIR) in una cartella.
-
-Aggiungere foto in Metashape utilizzando "Raggruppa per: Tipo di fotocamera" per rilevare automaticamente i set multispettrali.
-
-Controllare la calibrazione della fotocamera per verificare le bande e assegnare le lunghezze d'onda, se necessario.
-
-Allineare le foto (precisione media/alta).
-
-Creare DEM e ortomosaico multispettrale.
-
-Utilizzare il Raster Calculator per calcolare gli indici di vegetazione come NDVI.
-
-(Opzionale) Applicare la calibrazione della riflettanza utilizzando i metadati del sensore di luminosità o il pannello di calibrazione.
-
-Tradotto con DeepL.com (versione gratuita)
-
 Descrittori geometrici da intorno di 50 cm e 0.25 m estratti con 32 CPU. I descrittori geometrici sono noti da letteratura e sono qui estratti con la libreria [R "CloudGeometry"](https://github.com/fpirotti/CloudGeometry) disponibile su Github. Questa libreria sfrutta la capacità di utilizzo del calcolo parallelo multi-CPU dei moderni calcolatori. Questo passaggio è fondamentale dato il numero elevato di punti (\> 1e9 ).
 
 ![](images/clipboard-1084557557.png){width="302"}
@@ -112,4 +90,4 @@ La nuvola dopo segmentazione è disponibile per download QUI.
 
 ## Discussione
 
-Nel processo solo Lastools non è totalmente OS. Può essere sostituito eventualmente con soluzioni alternative; in questa proposta viene usato per l'efficacia dell'implementazione della fase di identificazione dei punti terreno con il modulo LasGround.
+Nel procedimento sono stati notati molti limiti nell'utilizzo di alcuni algoritmi implementati unicamente su R usando lidR e lasR. In primis lidR carica in un data.frame R i dati, ovvero in una struttura non ottimizzata. La libreria lasR invece utilizza quasi esclusivamente l'ambiente di memoria C++ dunque viene gestito meglio. Lastools invece sfrutta al meglio la capacità di calcolo parallelo, senza complicazioni dovute ad alcune strategie di condivisione della memoria utilizzate da R. Lastools viene lo stesso usato tramite R chiamando il programma con il comando system. L'utilizzo di alternative, per rendere il flusso di processo totalmente OS, è sicuramente da verificare, con adeguata attenzione all'implementazione di ogni singolo algoritmo per quanto riguarda l'utilizzo della memoria per ogni processo eseguito in parallelo.

@@ -2,48 +2,57 @@ pacman::p_load("lidR", "data.table", "h2o", "parallel", "pbmcapply")
 library(CloudGeometry)
 library(lasR)
 
+#global variables
+tilesize <- 50
+buffsize <- 1
 ## LEGGO IL FILE ----
-file <- "data/cloud_merged2.laz"
-ctg <- readLAScatalog(file)
-opt_chunk_size(ctg) <- 80
-opt_chunk_buffer(ctg) <- 1
-# opt_output_files(ctg) <- paste0("data/{ID}_geom")
-
-### funzione wrap per calcolo su lidR funzioni geometriche
-dGeom <- function(chunk, rk=c(1) ) # user defined function
-{
-  las <- readLAS(chunk)                  # read the chunk
-  if (is.empty(las)) return(NULL)        # check if it actually contain points
-  browser()
-  for(r in rk){
-    lasG <- CloudGeometry::calcGF(las@data[,1:3],rk = r, threads = 32)  # apply computation of interest
-    for(i in names(lasG)){
-      las <- lidR::add_lasattribute_manual(las, lasG[,i], name=i, desc=i, type="float")
-    }
-  }
-
-  return(las) # output
+file <- "data/in/cloud_merged.las"
+## 0.1 INDEX ----
+file.lax <- paste0(tools::file_path_sans_ext(file), ".lax")
+if(!file.exists( file.lax )){
+  pipeline = sprintf("lasindex64 -i %s ", file)
+  ret = system(pipeline)
 }
+
+## 0.2 TILE ----
+ctg <- readLAScatalog(file)
+opt_chunk_size(ctg) <- tilesize
+opt_chunk_buffer(ctg) <- buffsize
+opt_output_files<-""
+plot(ctg, chunk=TRUE)
+tiles <- list.files("data/out/tiles",  pattern="\\.la[sz]$")
+if(length(tiles)==0 || force==T){
+  pipeline = sprintf('lastile64 -i %s -tile_size %f -buffer 1  -o "data/out/tiles/tile.laz"  -cores 32 ',
+                     file, tilesize, buffsize)
+  ret = system(pipeline)
+  tiles <- list.files("data/out/tiles",  pattern="\\.la[sz]$")
+  ctg <- readLAScatalog("data/out/tiles")
+  opt_chunk_size(ctg) <- 0
+  opt_chunk_buffer(ctg) <- 0
+  opt_output_files<-""
+  plot(ctg, chunk=TRUE)
+  pipeline = sprintf("lasindex64 -i data/out/tiles/*.laz -cores 64")
+  ret = system(pipeline)
+}
+
 
 force=F
 
 ## 1. THIN ----
-outf <- "data/out/lowerPoints1m.laz"
-ff <- list.files("data/in", pattern="\\.las$", full.names = T)
-if(!file.exists(outf) || force==T){
-  low <- filter_with_grid(0.5, operator = "min")
-  ctg2 <- readLAScatalog( ff )
-  opt_chunk_size(ctg2) <- 0
-  opt_chunk_buffer(ctg2) <- -1
-  pipeline = reader() + low +  write_las(ofile = outf)
-  outf = exec(pipeline, on = ctg2, ncores = nested(4, 2) )
+outf1 <- "data/out/lowerPoints1m.laz"
+if(!file.exists(outf1) || force==T){
+  pipeline = sprintf("lasthin64 -i %s -o %s  -step 0.5 -cores 32", file, outf1)
+  ret = system(pipeline, intern=T)
 }
 
 ## 2. GROUND ----
 ### ps have to find OS ground classifier
-outf2 <- "data/out/lowerPoints1mClassified.laz"
+outf2a <- "data/out/lowerPoints1mClassified_ground.laz"
+outf2b <- "data/out/lowerPoints1mOnly_ground.laz"
 if(!file.exists(outf2) || force==T){
-  pipeline = sprintf("lasground64 -i %s -o %s", outf, outf2)
+  pipeline = sprintf("lasground_new64 -compute_height -metro -odix _ground -olaz  -i %s -o %s", outf1, outf2a)
+  ret = system(pipeline)
+  pipeline = sprintf("las2las64 -keep_class 2 -i %s -o %s", outf2a, outf2b)
   ret = system(pipeline)
 }
 
@@ -51,35 +60,19 @@ if(!file.exists(outf2) || force==T){
 ## 3. GRID GROUND ----
 outf3 <- "data/out/lowerPoints1mClassified.tif"
 if(!file.exists(outf3) || force==T){
-  read <- reader()
-  tri  <- triangulate(filter = keep_ground())
-  dtm  <- rasterize(0.5, tri)
-  pipeline <- read + tri + dtm
-  ans <- exec(pipeline, on = outf2)
-  terra::writeRaster(ans[[1]], outf3, overwrite=T)
+  pipeline = sprintf("las2dem64 -keep_class 2 -step 0.5  -i %s -o %s", outf2, outf3)
+  ret = system(pipeline, intern=T)
 }
 
 ## 4. NORMALIZE ----
-# outf4 <- "data/out/*.laz"
-# outf4 <- "data/out/lowerPoints1mClassifiedNorm.laz"
-
-norm <- function( las){
-  r = outf3
-  read <- reader()
-  rast <- load_raster(r, band = 1L)
-  norm <- rast + transform_with(rast)
-  pipeline <- read + norm + write_las(ofile = "data/out/norm/*_norm.laz")
-
-  ee <- tryCatch({
-    exec(pipeline, on = las )
-  }, error = function(e) {
-    list(file = basename(las), error = e$message)  # ritorna errore e file
-  })
+tiles.norm <- list.files("data/out/tilesNorm",  pattern="\\.la[sz]$")
+if(length(tiles.norm)==0 || force==T){
+  pipeline = sprintf('lasheight64 -ground_points %s -i data/out/tiles/tile*.laz -cores 32 ',
+                     outf2b)
+  ret = system(pipeline)
+  tiles.norm <- list.files("data/out/tilesNorm",  pattern="\\.la[sz]$")
 }
 
-
-
-output2 <-  pbmclapply(ff[1:4], norm, mc.cores = 12)
 
 ## 5. calcolo feature geometriche ----
 outf5 <- "data/out/lowerPoints1mClassifiedNormGeom.laz"
