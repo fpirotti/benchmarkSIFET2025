@@ -83,7 +83,7 @@ Fig. 2 - nuvola di punti normalizzata a voxel.
 Fig. 3 - risultato segmentazione in 10 classi
 
     0     1     2     3     4     5     6     7     8     9    
-0.256 0.002 0.064 0.027 0.169 0.043 0.076 0.146 0.029 0.187
+    0.256 0.002 0.064 0.027 0.169 0.043 0.076 0.146 0.029 0.187
 Tab. 1 - distribuzione di frequenza dei cluster (totale 1)
 
 
