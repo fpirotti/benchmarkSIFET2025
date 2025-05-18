@@ -44,8 +44,7 @@ La nuvola di punti ottenuti con la procedura precedente consente di tenere un nu
 
 I descrittori geometrici da un raggio intorno ad ogni punto di 0.50 m e 0.25 m vengono estratti usando un calcolo parallelo con 32 CPU alla volta. I descrittori geometrici sono noti da letteratura e sono qui estratti con la libreria [R "CloudGeometry"](https://github.com/fpirotti/CloudGeometry) disponibile su Github. Questa libreria sfrutta la capacità di utilizzo del calcolo parallelo multi-CPU dei moderni calcolatori. Questo passaggio è fondamentale dato il numero elevato di punti e la necessità di considerare n punti intorno ad ogni punto considerato.
 
-<img src="images/clipboard-2581011368.png" width="600"/>
-Fig. 1 - elaborazione descrittori geometici.
+<img src="images/clipboard-2581011368.png" width="600"/> Fig. 1 - elaborazione descrittori geometici.
 
 ### Normalizzazione
 
@@ -67,33 +66,27 @@ K-Means sceglie casualmente i punti di inizio nello spazio ad n-dimensioni dove 
 
 ## Risultati
 
-
 La nuvola di punti segmentata è visibile [QUI](https://github.com/fpirotti/benchmarkSIFET2025/blob/main/data/out/VOXnormGeomCluster.laz)
 
 Il cluster di ogni punto è disponibile nella sezione del formato ASPRS LAS di attributi "extra byte" in formato 8bit nell'attributo cluster.
 
-La fase di conversione in voxel e di calcolo della nZ ha prodotto una nuvola di 45e6
-punti visibile sotto tematizzata per nZ
+La fase di conversione in voxel e di calcolo della nZ ha prodotto una nuvola di 45e6 punti visibile sotto tematizzata per nZ
 
-<img src="images/capture.png" width="600"/>
-<img src="images/capture2b.png" width="600"/>
-Fig. 2 - nuvola di punti normalizzata a voxel.
- 
-<img src="images/capture2.png" width="1200"/>
-Fig. 3 - risultato segmentazione in 10 classi
+<img src="images/capture.png" width="600"/> <img src="images/capture2b.png" width="600"/> Fig. 2 - nuvola di punti normalizzata a voxel.
 
-<img src="images/Layout 1 copy.jpeg" />
-Fig. 4 - risultato segmentazione in 10 classi
+<img src="images/capture2.png" width="1200"/> Fig. 3 - risultato segmentazione in 10 classi
 
+<img src="images/Layout 1 copy.jpeg"/> Fig. 4 - risultato segmentazione in 10 classi
 
-    0     1     2     3     4     5     6     7     8     9    
-    0.256 0.002 0.064 0.027 0.169 0.043 0.076 0.146 0.029 0.187
+```         
+0     1     2     3     4     5     6     7     8     9    
+0.256 0.002 0.064 0.027 0.169 0.043 0.076 0.146 0.029 0.187
+```
+
 Tab. 1 - distribuzione di frequenza dei cluster (totale 1)
-
-
 
 ## Discussione
 
-Nel procedimento sono stati notati molti limiti nell'utilizzo di alcuni algoritmi implementati unicamente su R usando lidR e lasR. In primis lidR carica in un data.frame R i dati, ovvero in una struttura non ottimizzata. La libreria lasR invece utilizza quasi esclusivamente l'ambiente di memoria C++ dunque viene gestito meglio. Lastools invece sfrutta al meglio la capacità di calcolo parallelo, senza complicazioni dovute ad alcune strategie di condivisione della memoria utilizzate da R. Lastools viene lo stesso usato tramite R chiamando il programma con il comando system. L'utilizzo di alternative, per rendere il flusso di processo totalmente OS, è sicuramente da verificare, con adeguata attenzione all'implementazione di ogni singolo algoritmo per quanto riguarda l'utilizzo della memoria per ogni processo eseguito in parallelo.
+Nel procedimento sono stati notati molti limiti nell'utilizzo di alcuni algoritmi implementati unicamente su R usando lidR e lasR. In primis lidR carica in un data.frame R i dati, ovvero in una struttura non ottimizzata. La libreria lasR invece utilizza quasi esclusivamente l'ambiente di memoria C++ dunque viene gestito meglio. Lastools invece sfrutta al meglio la capacità di calcolo parallelo, senza complicazioni dovute ad alcune strategie di condivisione della memoria utilizzate da R. Lastools viene lo stesso usato tramite R chiamando il programma con il comando *system*. L'utilizzo di alternative, per rendere il flusso di processo totalmente OS, è sicuramente da verificare, con adeguata attenzione all'implementazione di ogni singolo algoritmo per quanto riguarda l'utilizzo della memoria per ogni processo eseguito in parallelo.
 
 Riguardo i descrittori geometrici, è utile riportare che questi sono disponibili anche in altri applicativi, come CloudCompare, ed anche nel recente sviluppo di lidR nel nuovo lasR ([Jean-Romain Roussel 2025](https://r-lidar.github.io/lasR/)), ma nel primo caso verrebbe richiesto un'integrazione tra applicativi differenti (R e CloudCompare), certamente possibile ma con aggiunta complessità, mentre nel secondo caso sono state testate le procedure ma non hanno l'implementazione interna per il calcolo parallelo che ha CloudGeometry, dunque i tempi di calcolo diventavano non compatibili (un file di 1e6 punti richiede 3 ore), e la gestione di eventuali elaborazioni parallele di più files non ha avuto successo, almeno dalle prove.
