@@ -2,6 +2,8 @@ pacman::p_load("lidR", "data.table", "h2o", "parallel", "pbmcapply")
 library(CloudGeometry)
 library(lasR)
 
+float: left;
+
 #global variables
 tilesize <- 50
 buffsize <- 1
@@ -112,9 +114,7 @@ opt_chunk_size(ctg2) <- 0
 opt_chunk_buffer(ctg2) <- -1
 vv <- apply(ctg2@data , 1, function(x){ list(f=x[["filename"]], p=x[["geometry"]]) })
 
-## 5. RASTER ----
-pipeline = sprintf("las2grid64 -user_data_average -step 0.5  -i %s -o %s", ff[1], outf3)
-ret = system(pipeline, intern=T)
+
 
 ## 6. SAMPLING PER MODELLO K-MEANS ----
 getSamples <- function(chunk)

@@ -30,21 +30,21 @@ In figura sotto l'area di studio.
 
 <img src="images/Layout 1.jpeg" width="600"/>
 
-## Metodi
+## Metodo
 
 L'obiettivo è la segmentazione, realizzata in modalità semi-automatica, mediante la suddivisione dei punti in cluster sulla base delle loro caratteristiche distintive.
 
 L'unità elementare usata per la segmentazione è il singolo punto nella nuvola di punti. L'ipotesi messa a verifica è che usando unicamente le informazioni rilevate dal sensore L2, senza l'ausilio di ulteriori informazioni di riflettanza e senza procedure di addestramento per identificare classi mediante esempi da inserire in un contesto di algoritmi di "machine learning", si possa dividere i punti in gruppi (cluster) utili ad una successiva classificazione o almeno ad una maggiore comprensione del territorio.
 
-Il primo passaggio è stato quello di identificare un piano terreno classificando punti appartenenti al terreno su un set di punti ricampionato a circa 0.5 m di passo, tenendo il punto con valore Z minore. Questa nuvola di punti ricampionata è stata poi classificata per identificare i punti ground e Le informazioni utilizzate sono quelle delle variabili seguenti: la coordinata Z relativa al terreno (nZ), e 15 descrittori geometrici estratti mediante la libreria per R sviluppata ad hoc "[CloudGeometry](https://github.com/fpirotti/CloudGeometry)". Come descritto nella pagina GitHub dedicata, questa libreria estrae 15 descrittori di forma usando combinazioni di autovalori e componenti principali estratti dalle coordinate X, Y e nZ.
+Il primo passaggio è stato quello di identificare un piano terreno classificando punti appartenenti al terreno su un set di punti ricampionato a circa 0.5 m di passo, tenendo il punto con valore Z minore. Questa nuvola di punti ricampionata è stata poi classificata per identificare i punti ground che servono per calcoloare la coordinata Z relativa al terreno (nZ).
 
-L'intera nuvola di punti viene divisa in qualche centinaio di quadri con un buffer di 1 m (vedi figura sotto).
+La nuvola intera è stata poi normalizzata in senso spaziale usando dei voxel di 0.2 m tenendo un punto con coordinate e attributi medi rispetto a tutti i punti che ricadono nel voxel. Questo serve per limitare distribuzioni molto differenti di densità dei punti, che vanno ad inficiare il calcolo di alcuni parametri geometrici.
 
-I descrittori geometrici da un raggio intorno ad ogni punto di 0.50 m e 0.25 m vengono estratti usando un calcolo parallelo con 32 CPU alla volta su ogni quadro. I descrittori geometrici sono noti da letteratura e sono qui estratti con la libreria [R "CloudGeometry"](https://github.com/fpirotti/CloudGeometry) disponibile su Github. Questa libreria sfrutta la capacità di utilizzo del calcolo parallelo multi-CPU dei moderni calcolatori. Questo passaggio è fondamentale dato il numero elevato di punti e la necessità di considerare n punti intorno ad ogni punto considerato.
+La nuvola di punti ottenuti con la procedura precedente consente di tenere un numero di punti più ragionevole per le successive elaborazioni. Questa nuvola di punti è stata elaborata per estrarre 15 descrittori geometrici mediante la libreria per R sviluppata ad hoc "[CloudGeometry](#0)". Come descritto nella pagina GitHub dedicata, questa libreria estrae 15 descrittori di forma usando combinazioni di autovalori e componenti principali estratti dalle coordinate X, Y e nZ.
 
-<img style="float:left;" src="images/clipboard-1084557557.png" width="250"/>
+I descrittori geometrici da un raggio intorno ad ogni punto di 0.50 m e 0.25 m vengono estratti usando un calcolo parallelo con 32 CPU alla volta. I descrittori geometrici sono noti da letteratura e sono qui estratti con la libreria [R "CloudGeometry"](https://github.com/fpirotti/CloudGeometry) disponibile su Github. Questa libreria sfrutta la capacità di utilizzo del calcolo parallelo multi-CPU dei moderni calcolatori. Questo passaggio è fondamentale dato il numero elevato di punti e la necessità di considerare n punti intorno ad ogni punto considerato.
 
-<img src="images/clipboard-2581011368.png" width="250"/>
+<img src="images/clipboard-2581011368.png" width="300"/>
 
 ### Normalizzazione
 
@@ -68,7 +68,13 @@ K-Means sceglie casualmente i punti di inizio nello spazio ad n-dimensioni dove 
 
 I dati sono visibili online [QUI](https://www.cirgeo.unipd.it/pointclouds/sifetBenchmark2025/).
 
-La nuvola dopo segmentazione è disponibile per download QUI.
+Il cluster di ogni punto è disponibile nella sezione del formato ASPRS LAS di attributi "extra byte" in formato 8bit nell'attributo cluster.
+
+La fase di conversion in voxel e di calcolo della nZ ha prodotto una nuvola di 45e6
+punti visibile sotto tematizzata per nZ
+
+
+<img src="images/capture.png" width="600"/>
 
 ## Discussione
 
