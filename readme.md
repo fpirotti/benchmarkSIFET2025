@@ -67,7 +67,6 @@ K-Means sceglie casualmente i punti di inizio nello spazio ad n-dimensioni dove 
 
 ## Risultati
 
-I dati sono visibili online [QUI](https://www.cirgeo.unipd.it/pointclouds/sifetBenchmark2025/).
 
 La nuvola di punti segmentata è visibile [QUI](https://github.com/fpirotti/benchmarkSIFET2025/blob/main/data/out/VOXnormGeomCluster.laz)
 
@@ -83,6 +82,8 @@ Fig. 2 - nuvola di punti normalizzata a voxel.
 <img src="images/capture2.png" width="1200"/>
 Fig. 3 - risultato segmentazione in 10 classi
 
+<img src="images/Layout 1 copy.jpeg" />
+Fig. 4 - risultato segmentazione in 10 classi
     0     1     2     3     4     5     6     7     8     9    
     0.256 0.002 0.064 0.027 0.169 0.043 0.076 0.146 0.029 0.187
 Tab. 1 - distribuzione di frequenza dei cluster (totale 1)
