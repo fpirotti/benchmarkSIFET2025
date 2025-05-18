@@ -77,8 +77,9 @@ La fase di conversione in voxel e di calcolo della nZ ha prodotto una nuvola di 
 punti visibile sotto tematizzata per nZ
 
 <img src="images/capture.png" width="600"/>
+<img src="images/capture2.png" width="600"/>
 Fig. 2 - nuvola di punti normalizzata a voxel.
-
+ 
 <img src="images/capture2.png" width="1200"/>
 Fig. 3 - risultato segmentazione in 10 classi
 
