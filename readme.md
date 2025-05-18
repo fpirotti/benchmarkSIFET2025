@@ -42,11 +42,9 @@ L'intera nuvola di punti viene divisa in qualche centinaio di quadri con un buff
 
 I descrittori geometrici da un raggio intorno ad ogni punto di 0.50 m e 0.25 m vengono estratti usando un calcolo parallelo con 32 CPU alla volta su ogni quadro. I descrittori geometrici sono noti da letteratura e sono qui estratti con la libreria [R "CloudGeometry"](https://github.com/fpirotti/CloudGeometry) disponibile su Github. Questa libreria sfrutta la capacità di utilizzo del calcolo parallelo multi-CPU dei moderni calcolatori. Questo passaggio è fondamentale dato il numero elevato di punti e la necessità di considerare n punti intorno ad ogni punto considerato.
 
- 
+<img style="float:left;" src="images/clipboard-1084557557.png" width="250"/>
 
-<img src="images/clipboard-1084557557.png" width="373"/>
-
-<img src="images/clipboard-2581011368.png" width="373"/>
+<img src="images/clipboard-2581011368.png" width="250"/>
 
 ### Normalizzazione
 
