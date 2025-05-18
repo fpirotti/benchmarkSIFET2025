@@ -68,6 +68,8 @@ K-Means sceglie casualmente i punti di inizio nello spazio ad n-dimensioni dove 
 
 I dati sono visibili online [QUI](https://www.cirgeo.unipd.it/pointclouds/sifetBenchmark2025/).
 
+La nuvola di punti segmentata è visibile [QUI](https://github.com/fpirotti/benchmarkSIFET2025/blob/main/data/out/VOXnormGeomCluster.laz)
+
 Il cluster di ogni punto è disponibile nella sezione del formato ASPRS LAS di attributi "extra byte" in formato 8bit nell'attributo cluster.
 
 La fase di conversion in voxel e di calcolo della nZ ha prodotto una nuvola di 45e6
