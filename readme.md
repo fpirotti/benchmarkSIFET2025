@@ -44,7 +44,8 @@ La nuvola di punti ottenuti con la procedura precedente consente di tenere un nu
 
 I descrittori geometrici da un raggio intorno ad ogni punto di 0.50 m e 0.25 m vengono estratti usando un calcolo parallelo con 32 CPU alla volta. I descrittori geometrici sono noti da letteratura e sono qui estratti con la libreria [R "CloudGeometry"](https://github.com/fpirotti/CloudGeometry) disponibile su Github. Questa libreria sfrutta la capacità di utilizzo del calcolo parallelo multi-CPU dei moderni calcolatori. Questo passaggio è fondamentale dato il numero elevato di punti e la necessità di considerare n punti intorno ad ogni punto considerato.
 
-<img src="images/clipboard-2581011368.png" width="300"/>
+<img src="images/clipboard-2581011368.png" width="600"/>
+Fig. 1 - elaborazione descrittori geometici.
 
 ### Normalizzazione
 
@@ -76,8 +77,16 @@ La fase di conversione in voxel e di calcolo della nZ ha prodotto una nuvola di 
 punti visibile sotto tematizzata per nZ
 
 <img src="images/capture.png" width="600"/>
+Fig. 2 - nuvola di punti normalizzata a voxel.
 
 <img src="images/capture2.png" width="1200"/>
+Fig. 3 - risultato segmentazione in 10 classi
+
+    0     1     2     3     4     5     6     7     8     9    
+0.256 0.002 0.064 0.027 0.169 0.043 0.076 0.146 0.029 0.187
+Tab. 1 - distribuzione di frequenza dei cluster (totale 1)
+
+
 
 ## Discussione
 
