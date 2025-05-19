@@ -1,4 +1,55 @@
-# Calcolo
+# Benchmark 66° Convegno Annuale SIFET 2025
+
+**“Classificazione di nuvole di punti da drone”**
+
+Francesco Pirotti, Enrico Magazzino
+
+*CIRGEO Centro Interdipartimentale di Ricerca di Geomatica / TESAF Dipartimento Territorio e Sistemi Agroforestali, Università di Padova*
+
+## Obiettivi
+
+L'obiettivo del benchmark è di:
+
+======================
+
+"testare e validare metodologie efficaci e replicabili di segmentazione 
+automatica e/o assistita di nuvole di punti acquisite da sensori montati su aeromobili a pilotaggio remoto (APR).
+
+L’utente è invitato a proporre metodi innovativi e/o consolidati in grado di classificare e segmentare le nuvole di
+punti in modo efficace e replicabile, con particolare attenzione alla distinzione di oggetti (vegetazione, edifici,
+suolo, infrastrutture, ecc.).
+
+======================
+
+In questo test si procede unicamente ad una fase di segmentazione, senza la parte di classificazione, ovvero l'obiettivo specifico è di suddividere i punti rilevati con sensore laser scanner in parti omogenee (segmenti o oggetti), in base a criteri estratti dalle variabili disponibili.
+
+I punti di nota del lavoro sono:
+
+ - vengono usate unicamente le coordinate di punti XYZ, non vengono considerate
+ intensità, numero di ritorno e altri attributi tipici di un rilievo lidar
+ 
+ - viene elaborata tutta la nuvola di punti con diverse strategie per considerare
+la velocità di elaborazione come fattore importante nelle decisioni finali 
+dell'approccio da adottare
+
+
+
+## Materiale e Metodi
+
+### Dati utilizzati
+
+Il benchmark mette a disposizione diversi prodotti da rilievo con drone con camere RGB, multispettrali e LiDAR su una zona agricola. La nuvola di punti contiene 1'248'152'076 (1.25 x 10\^9) punti.
+
+La procedura di segmentazione assistita viene implementata usando  solo la nuvola di punti e descrittori geometrici estratti dalle coordinate XYZ.
+ 
+
+### Software
+
+Per la procedura di segmentazione vengono utilizzati quasi tutti algoritmi e applicativi a codice aperto (open source - OS) di ultima generazione, "chiamati" in una procedura in ambiente R per uniformare il processo. In particolare vengono usati Lastools, lasR, LidR, CloudGeometry e H2O.
+
+Per la procedura di creazione dell'ortoimmagine multispettrale è stato utilizzato Metashape-pro.
+
+### Capacità di calcolo
 
 Per l'elaborazione viene usato un calcolatore assemblato SuperMicro, con le seguenti caratteristiche:
 
@@ -30,11 +81,19 @@ In figura sotto l'area di studio.
 
 <img src="images/Layout 1.jpeg" width="600"/>
 
-## Metodo
+## Metodi
 
 L'obiettivo è la segmentazione, realizzata in modalità semi-automatica, mediante la suddivisione dei punti in cluster sulla base delle loro caratteristiche distintive.
 
-L'unità elementare usata per la segmentazione è il singolo punto nella nuvola di punti. L'ipotesi messa a verifica è che usando unicamente le informazioni rilevate dal sensore L2, senza l'ausilio di ulteriori informazioni di riflettanza e senza procedure di addestramento per identificare classi mediante esempi da inserire in un contesto di algoritmi di "machine learning", si possa dividere i punti in gruppi (cluster) utili ad una successiva classificazione o almeno ad una maggiore comprensione del territorio.
+Per semiautomatica si intende che non richiede interventi manuali di addestramento 
+tipi invece delle procedure guidate. Gli unici parametri da utilizzare sono quello per la definizione di un modello digitale del terreno e il raggio per definire i 
+descrittori geometrici. Il primo è facilmente identificabile con il tipo di terreno
+(in forte pendenza o in piano, con grandi edifici o privo di grandi edifici). Il 
+secondo dipende dal passo medio tra punti (densità dei punti) ed è facilmente 
+identificabile.
+
+L'unità elementare utilizzata per la segmentazione è il singolo punto della nuvola di punti. L’ipotesi oggetto di verifica è che, basandosi esclusivamente sulle informazioni geometriche rilevate dal sensore L2 — senza ricorrere a dati di riflettanza aggiuntivi né a procedure di addestramento supervisionato — sia possibile suddividere i punti in gruppi (cluster) utili per una successiva classificazione o, quantomeno, per una più approfondita comprensione del territorio.
+
 
 Il primo passaggio è stato quello di identificare un piano terreno classificando punti appartenenti al terreno su un set di punti ricampionato a circa 0.5 m di passo, tenendo il punto con valore Z minore. Questa nuvola di punti ricampionata è stata poi classificata per identificare i punti ground che servono per calcoloare la coordinata Z relativa al terreno (nZ).
 
