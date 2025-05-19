@@ -148,8 +148,9 @@ Il cluster di ogni punto è disponibile nella sezione del formato ASPRS LAS di a
 
 La fase di conversione in voxel e di calcolo della nZ ha prodotto una nuvola di 45e6 punti visibile sotto tematizzata per nZ
 
-
-<img src="images/capture2b.png" width="300" style="float:left;"/> 
+<div style="float:left;">
+<img src="images/capture2b.png" width="300"  />
+</div>
 <img src="images/capture2.png" width="300" style="display:block;"  />
 <br>
 Fig. 2 - nuvola di punti normalizzata a voxel. Fig. 3 - risultato segmentazione in 10 classi
