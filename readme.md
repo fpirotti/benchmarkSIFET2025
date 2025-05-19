@@ -147,15 +147,22 @@ La nuvola di punti segmentata è visibile [QUI](https://github.com/fpirotti/benc
 Il cluster di ogni punto è disponibile nella sezione del formato ASPRS LAS di attributi "extra byte" in formato 8bit nell'attributo cluster.
 
 La fase di conversione in voxel e di calcolo della nZ ha prodotto una nuvola di 45e6 punti visibile sotto tematizzata per nZ
- 
-<img src="images/capture2b.png" align="left" width="300"  />
- 
-<img src="images/capture2.png" width="300" style="display:block;"  />
- 
-<br>
-Fig. 2 - nuvola di punti normalizzata a voxel. Fig. 3 - risultato segmentazione in 10 classi
 
-<img src="images/Layout 1 copy.jpeg"/> Fig. 4 - risultato segmentazione in 10 classi
+<table>
+<tr><td>
+<img src="images/capture2b.png" width="300"  />
+Fig. 2 - nuvola di punti normalizzata a voxel. Fig. 3 - risultato segmentazione in 10 classi
+</td>
+<td> 
+<img src="images/capture2.png" width="300" style="display:block;"  />
+ Fig. 3 - risultato segmentazione in 10 classi
+</td>
+<tr>
+</table>
+<br>
+
+<img src="images/Layout 1 copy.jpeg"/> 
+Fig. 4 - risultato segmentazione in 10 classi
 
 ```         
 0     1     2     3     4     5     6     7     8     9    
