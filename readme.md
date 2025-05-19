@@ -25,23 +25,23 @@ In questo test si procede unicamente ad una fase di segmentazione, senza la part
 
 I punti di nota del lavoro sono:
 
- - vengono usate unicamente le coordinate di punti XYZ, non vengono considerate
- intensità, numero di ritorno e altri attributi tipici di un rilievo lidar
- 
- - viene elaborata tutta la nuvola di punti con diverse strategie per considerare
+- vengono usate unicamente le coordinate di punti XYZ, non vengono considerate
+intensità, numero di ritorno e altri attributi tipici di un rilievo lidar
+
+- viene elaborata tutta la nuvola di punti con diverse strategie per considerare
 la velocità di elaborazione come fattore importante nelle decisioni finali 
 dell'approccio da adottare
 
 
 
-## Materiale e Metodi
+## Materiali
 
 ### Dati utilizzati
 
 Il benchmark mette a disposizione diversi prodotti da rilievo con drone con camere RGB, multispettrali e LiDAR su una zona agricola. La nuvola di punti contiene 1'248'152'076 (1.25 x 10\^9) punti.
 
 La procedura di segmentazione assistita viene implementata usando  solo la nuvola di punti e descrittori geometrici estratti dalle coordinate XYZ.
- 
+
 
 ### Software
 
@@ -94,14 +94,28 @@ identificabile.
 
 L'unità elementare utilizzata per la segmentazione è il singolo punto della nuvola di punti. L’ipotesi oggetto di verifica è che, basandosi esclusivamente sulle informazioni geometriche rilevate dal sensore L2 — senza ricorrere a dati di riflettanza aggiuntivi né a procedure di addestramento supervisionato — sia possibile suddividere i punti in gruppi (cluster) utili per una successiva classificazione o, quantomeno, per una più approfondita comprensione del territorio.
 
+Tutti i passaggi sono documentati nel codice del file [01_processBenchmark](https://github.com/fpirotti/benchmarkSIFET2025/blob/main/01_processBenchmark.R)
 
-Il primo passaggio è stato quello di identificare un piano terreno classificando punti appartenenti al terreno su un set di punti ricampionato a circa 0.5 m di passo, tenendo il punto con valore Z minore. Questa nuvola di punti ricampionata è stata poi classificata per identificare i punti ground che servono per calcoloare la coordinata Z relativa al terreno (nZ).
+###  Estrazione dei punti terreno e modello digitale del terreno
 
-La nuvola intera è stata poi normalizzata in senso spaziale usando dei voxel di 0.2 m tenendo un punto con coordinate e attributi medi rispetto a tutti i punti che ricadono nel voxel. Questo serve per limitare distribuzioni molto differenti di densità dei punti, che vanno ad inficiare il calcolo di alcuni parametri geometrici.
 
-La nuvola di punti ottenuti con la procedura precedente consente di tenere un numero di punti più ragionevole per le successive elaborazioni. Questa nuvola di punti è stata elaborata per estrarre 15 descrittori geometrici mediante la libreria per R sviluppata ad hoc "[CloudGeometry](#0)". Come descritto nella pagina GitHub dedicata, questa libreria estrae 15 descrittori di forma usando combinazioni di autovalori e componenti principali estratti dalle coordinate X, Y e nZ.
+La prima fase del processo ha previsto l’identificazione dei punti appartenenti al 
+terreno. A tal fine, è stato creato un dataset ricampionato della nuvola di punti, 
+con un passo spaziale di circa 0,5 m, mantenendo per ciascun quadrato di griglia il 
+punto con valore Z minimo. Su questa nuvola ricampionata è stata quindi applicata 
+una classificazione per distinguere i punti "terreno" ("ground") dagli altri. I
+punti identificati come terreno sono stati utilizzati per calcolare la coordinata altimetrica normalizzata rispetto alla superficie del suolo (nZ).
+A conclusione di questa fase, sono stati prodotti: (i) un raster a risoluzione 0,5 m
+contenente le quote del terreno; (ii) una nuvola di punti contenente esclusivamente 
+i punti classificati come terreno.
 
-I descrittori geometrici da un raggio intorno ad ogni punto di 0.50 m e 0.25 m vengono estratti usando un calcolo parallelo con 32 CPU alla volta. I descrittori geometrici sono noti da letteratura e sono qui estratti con la libreria [R "CloudGeometry"](https://github.com/fpirotti/CloudGeometry) disponibile su Github. Questa libreria sfrutta la capacità di utilizzo del calcolo parallelo multi-CPU dei moderni calcolatori. Questo passaggio è fondamentale dato il numero elevato di punti e la necessità di considerare n punti intorno ad ogni punto considerato.
+### Voxelizzazione  
+
+La nuvola di punti è stata successivamente normalizzata spazialmente tramite una voxelizzazione con celle tridimensionali di 0,2 m. Per ciascun voxel, è stato calcolato un punto rappresentativo, ottenuto come media delle coordinate e degli attributi di tutti i punti contenuti nella cella. Questo passaggio ha lo scopo di uniformare la distribuzione spaziale della nuvola, riducendo le variazioni locali di densità che potrebbero compromettere l’affidabilità del calcolo di alcuni descrittori geometrici.
+
+La nuvola di punti ottenuta tramite la procedura di voxelizzazione presenta una densità più omogenea e un numero di punti gestibile per le successive elaborazioni. Su questa nuvola è stata eseguita l’estrazione di 15 descrittori geometrici mediante la libreria R sviluppata ad hoc  [R "CloudGeometry"](https://github.com/fpirotti/CloudGeometry) disponibile su Github. Come descritto nella documentazione del progetto su GitHub, la libreria calcola i descrittori attraverso combinazioni di autovalori e componenti principali (PCA) ottenuti dalle coordinate X, Y e dalla quota normalizzata (nZ). I descrittori sono calcolati in questo caso considerando l’intorno di ciascun punto entro due raggi differenti: 0.5 m e 1 m. Questi raggi per identificare i punti vicini sono ragionevoli considerando il passo di 0.2 dei voxel.
+
+L’elaborazione è stata effettuata in parallelo sfruttando 32 CPU simultaneamente, grazie al supporto al calcolo parallelo offerto dalla libreria. Questo approccio è essenziale per gestire l’elevato numero di punti e la necessità di valutare, per ciascun punto, i vicini contenuti nel raggio definito.  
 
 <img src="images/clipboard-2581011368.png" width="600"/> Fig. 1 - elaborazione descrittori geometici.
 
@@ -117,11 +131,14 @@ $$
 \quad \text{dove} \quad \tilde{x} = \text{mediana}(X) 
 $$
 
-La segmentazione viene poi eseguita con il metodo K-means su queste variabili e sull'altezza normalizzata, ovvero rispetto al terreno.
+La segmentazione viene poi eseguita con il metodo K-means su queste variabili 
+trasformate.
 
 ### K-Means
 
-K-Means sceglie casualmente i punti di inizio nello spazio ad n-dimensioni dove n = il numero di variabili (nel nostro caso 33, ovvero 30 metriche di geometria, 15 per ogni con raggio di 25 e 50 cm rispettivamente, e 3 dalla riflettanza della camera RGB integrata nel laser. Il metodo converge verso un minimo locale dei centroidi. Il numero di cluster è arbitrario e dovrebbe essere considerato come un parametro da regolazione. In questa prova vengono utilizzati 24 cluster. Il risultato è una matrice che contiene le assegnazioni ai cluster e le coordinate nello spazio n-dimensionale dei centri dei cluster in termini degli attributi originariamente selezionati. I centri dei cluster possono variare leggermente a ogni esecuzione, poiché questo problema è non-deterministico Polynomial-time hard).
+K-Means è un approccio di segmentazione. Clusterizza un numero di punti sceglie casualmente i punti di inizio nello spazio ad n-dimensioni dove n = il numero di variabili (nel nostro caso 31, ovvero 30 metriche di geometria, 15 per ogni con raggio utilizzato, e 1 dall'altezza dei punti rispetto al terreno. 
+
+Il metodo converge verso un minimo locale dei centroidi. Il numero di cluster è arbitrario e dovrebbe essere considerato come un parametro da impostare. In questa prova vengono utilizzati 10 cluster. Il risultato è una matrice che contiene le assegnazioni ai cluster e le coordinate nello spazio n-dimensionale dei centri dei cluster in termini degli attributi originariamente selezionati.  
 
 ## Risultati
 
@@ -131,9 +148,11 @@ Il cluster di ogni punto è disponibile nella sezione del formato ASPRS LAS di a
 
 La fase di conversione in voxel e di calcolo della nZ ha prodotto una nuvola di 45e6 punti visibile sotto tematizzata per nZ
 
-<img src="images/capture.png" width="600"/> <img src="images/capture2b.png" width="600"/> Fig. 2 - nuvola di punti normalizzata a voxel.
 
-<img src="images/capture2.png" width="1200"/> Fig. 3 - risultato segmentazione in 10 classi
+<img src="images/capture2b.png" width="300" style="float:left;"/> 
+<img src="images/capture2.png" width="300" style="display:block;"  />
+<br>
+Fig. 2 - nuvola di punti normalizzata a voxel. Fig. 3 - risultato segmentazione in 10 classi
 
 <img src="images/Layout 1 copy.jpeg"/> Fig. 4 - risultato segmentazione in 10 classi
 

@@ -91,8 +91,8 @@ load <-  function(data) {
   if(nrow(data)<1){
     return(data)
   }
-  lasG1 <- CloudGeometry::calcGF(data[,1:3],rk = 1, threads = 128)  # apply computation of interest
-  lasG2 <- CloudGeometry::calcGF(data[,1:3],rk = 2, threads = 128)  # apply computation of interest
+  lasG1 <- CloudGeometry::calcGF(data[,1:3],rk = 0.5, threads = 128)  # apply computation of interest
+  lasG2 <- CloudGeometry::calcGF(data[,1:3],rk = 1, threads = 128)  # apply computation of interest
   data[,names(lasG1)] <- lasG1[,names(lasG1)]
   data[,names(lasG2)] <- lasG2[,names(lasG2)]
   message("done data")
