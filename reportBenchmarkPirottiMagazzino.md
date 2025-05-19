@@ -25,20 +25,19 @@ output:
 lang: it  
 ---
 
-
 # Obiettivi
 
-L'obiettivo del benchmark è di:
+L'obiettivo del benchmark richiesto da SIFET è il seguente:
 
-======================
-
-"testare e validare metodologie efficaci e replicabili di segmentazione automatica e/o assistita di nuvole di punti acquisite da sensori montati su aeromobili a pilotaggio remoto (APR).
+Testare e validare metodologie efficaci e replicabili di segmentazione automatica e/o assistita di nuvole di punti acquisite da sensori montati su aeromobili a pilotaggio remoto (APR).
 
 L’utente è invitato a proporre metodi innovativi e/o consolidati in grado di classificare e segmentare le nuvole di punti in modo efficace e replicabile, con particolare attenzione alla distinzione di oggetti (vegetazione, edifici, suolo, infrastrutture, ecc.).
 
-======================
+======== 
 
 In questo test si procede unicamente ad una fase di segmentazione, senza la parte di classificazione, ovvero l'obiettivo specifico è di suddividere i punti rilevati con sensore laser scanner in parti omogenee (segmenti o oggetti), in base a criteri estratti dalle variabili disponibili.
+
+Il codice R con la procedura è disponibile nel sito [GITHUB https://github.com/fpirotti/benchmarkSIFET2025/ ](https://github.com/fpirotti/benchmarkSIFET2025)
 
 I punti di nota del lavoro sono:
 
