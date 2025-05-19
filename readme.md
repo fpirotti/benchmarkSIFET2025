@@ -14,14 +14,16 @@ output:
     keep_tex: true
     toc: true 
     number_sections: true 
-lang: it
-
-number_sections: true
-includes:
-  in_header: \usepackage[colorlinks=true,
-            linkcolor=blue,
-            urlcolor=blue,
-            citecolor=blue]{hyperref}
+    pandoc_args:
+      - "--variable"
+      - "colorlinks=true"
+      - "--variable"
+      - "linkcolor=blue"
+      - "--variable"
+      - "urlcolor=blue"
+      - "--variable"
+      - "citecolor=blue"
+lang: it  
 ---
 
 
